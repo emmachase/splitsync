@@ -1,0 +1,643 @@
+type Query {
+  getAccounts: AccountsResponse
+  getAccountTypeOptions: AccountTypeOptionsResponse
+  getRecentAccountBalances(startDate: String): AccountRecentBalancesResponse
+  getAccountSnapshotsByType(startDate: String!, timeframe: String!): AccountSnapshotsResponse
+  getAggregateSnapshots(
+    startDate: String
+    endDate: String
+    accountType: String
+  ): AggregateSnapshotsResponse
+  getAccountHoldings(accountId: Int!): AccountHoldingsResponse
+  getAccountHistory(accountId: Int!): AccountHistoryResponse
+  getInstitutions: InstitutionsResponse
+  getBudgets(
+    startDate: String
+    endDate: String
+    useLegacyGoals: Boolean
+    useV2Goals: Boolean
+  ): BudgetsResponse
+  getSubscriptionDetails: SubscriptionDetailsResponse
+  getTransactionsSummary: TransactionsSummaryResponse
+  getTransactions(
+    limit: Int
+    offset: Int
+    startDate: String
+    endDate: String
+    search: String
+    categoryIds: [String]
+    accountIds: [String]
+    tagIds: [String]
+    hasAttachments: Boolean
+    hasNotes: Boolean
+    hiddenFromReports: Boolean
+    isSplit: Boolean
+    isRecurring: Boolean
+    importedFromMint: Boolean
+    syncedFromInstitution: Boolean
+  ): TransactionsResponse
+  getTransactionCategories: CategoriesResponse
+  getTransactionCategoryGroups: CategoryGroupsResponse
+  getTransactionTags: TransactionTagsResponse
+  getTransactionDetails(transactionId: String!, redirectPosted: Boolean): TransactionDetailsResponse
+  getTransactionSplits(transactionId: String!): TransactionSplitsResponse
+  getCashflow(limit: Int, startDate: String, endDate: String): CashflowResponse
+  getCashflowSummary(limit: Int, startDate: String, endDate: String): CashflowSummaryResponse
+  getRecurringTransactions(startDate: String, endDate: String): RecurringTransactionsResponse
+}
+
+type Mutation {
+  createManualAccount(
+    accountType: String!
+    accountSubType: String!
+    isInNetWorth: Boolean!
+    accountName: String!
+    accountBalance: Float
+  ): CreateManualAccountResponse
+  updateAccount(
+    accountId: String!
+    accountName: String
+    accountBalance: Float
+    accountType: String
+    accountSubType: String
+    includeInNetWorth: Boolean
+    hideFromSummaryList: Boolean
+    hideTransactionsFromReports: Boolean
+  ): UpdateAccountResponse
+  deleteAccount(accountId: String!): DeleteAccountResponse
+  requestAccountsRefresh(accountIds: [String]!): RequestAccountsRefreshResponse
+  createTransaction(
+    date: String!
+    accountId: String!
+    amount: Float!
+    merchantName: String!
+    categoryId: String!
+    notes: String
+    updateBalance: Boolean
+  ): CreateTransactionResponse
+  deleteTransaction(transactionId: String!): DeleteTransactionResponse
+  deleteTransactionCategory(categoryId: String!): DeleteTransactionCategoryResponse
+  createTransactionCategory(
+    groupId: String!
+    transactionCategoryName: String!
+    icon: String
+    rolloverStartMonth: String
+    rolloverEnabled: Boolean
+    rolloverType: String
+  ): CreateTransactionCategoryResponse
+  createTransactionTag(name: String!, color: String!): CreateTransactionTagResponse
+  setTransactionTags(transactionId: String!, tagIds: [String]!): SetTransactionTagsResponse
+  updateTransaction(
+    transactionId: String!
+    categoryId: String
+    merchantName: String
+    goalId: String
+    amount: Float
+    date: String
+    hideFromReports: Boolean
+    needsReview: Boolean
+    notes: String
+  ): UpdateTransactionResponse
+  setBudgetAmount(
+    amount: Float!
+    categoryId: String
+    categoryGroupId: String
+    timeframe: String
+    startDate: String
+    applyToFuture: Boolean
+  ): SetBudgetAmountResponse
+  uploadAccountBalanceHistory(accountId: String!, csvContent: String!): UploadAccountBalanceHistoryResponse
+  updateTransactionSplits(transactionId: String!, splitData: [SplitDataInput]!): UpdateTransactionSplitsResponse
+}
+
+type AccountsResponse {
+  accounts: [Account]
+  householdPreferences: HouseholdPreferences
+}
+
+type AccountTypeOptionsResponse {
+  accountTypeOptions: [AccountTypeOption]
+}
+
+type AccountRecentBalancesResponse {
+  accounts: [Account]
+}
+
+type AccountSnapshotsResponse {
+  snapshotsByAccountType: [SnapshotByAccountType]
+  accountTypes: [AccountType]
+}
+
+type AggregateSnapshotsResponse {
+  aggregateSnapshots: [AggregateSnapshot]
+}
+
+type AccountHoldingsResponse {
+  portfolio: Portfolio
+}
+
+type AccountHistoryResponse {
+  account: Account
+  transactions: Transactions
+  snapshots: [Snapshot]
+}
+
+type InstitutionsResponse {
+  credentials: [Credential]
+  accounts: [Account]
+  subscription: Subscription
+}
+
+type BudgetsResponse {
+  budgetData: BudgetData
+  categoryGroups: [CategoryGroup]
+  goals: [Goal]
+  goalMonthlyContributions: [GoalMonthlyContribution]
+  goalPlannedContributions: [GoalPlannedContribution]
+  goalsV2: [GoalV2]
+  budgetSystem: String
+}
+
+type SubscriptionDetailsResponse {
+  subscription: Subscription
+}
+
+type TransactionsSummaryResponse {
+  aggregates: Aggregates
+}
+
+type TransactionsResponse {
+  allTransactions: Transactions
+  transactionRules: [TransactionRule]
+}
+
+type CategoriesResponse {
+  categories: [Category]
+}
+
+type CategoryGroupsResponse {
+  categoryGroups: [CategoryGroup]
+}
+
+type TransactionTagsResponse {
+  householdTransactionTags: [TransactionTag]
+}
+
+type TransactionDetailsResponse {
+  getTransaction: Transaction
+  myHousehold: MyHousehold
+}
+
+type TransactionSplitsResponse {
+  getTransaction: Transaction
+}
+
+type CashflowResponse {
+  byCategory: Aggregates
+  byCategoryGroup: Aggregates
+  byMerchant: Aggregates
+  summary: Aggregates
+}
+
+type CashflowSummaryResponse {
+  summary: Aggregates
+}
+
+type RecurringTransactionsResponse {
+  recurringTransactionItems: [RecurringTransactionItem]
+}
+
+type CreateManualAccountResponse {
+  createManualAccount: AccountMutationResponse
+}
+
+type UpdateAccountResponse {
+  updateAccount: AccountMutationResponse
+}
+
+type DeleteAccountResponse {
+  deleteAccount: AccountMutationResponse
+}
+
+type RequestAccountsRefreshResponse {
+  forceRefreshAccounts: ForceRefreshAccountsResponse
+}
+
+type CreateTransactionResponse {
+  createTransaction: TransactionMutationResponse
+}
+
+type DeleteTransactionResponse {
+  deleteTransaction: TransactionMutationResponse
+}
+
+type DeleteTransactionCategoryResponse {
+  deleteCategory: TransactionMutationResponse
+}
+
+type CreateTransactionCategoryResponse {
+  createCategory: TransactionMutationResponse
+}
+
+type CreateTransactionTagResponse {
+  createTransactionTag: TransactionMutationResponse
+}
+
+type SetTransactionTagsResponse {
+  setTransactionTags: TransactionMutationResponse
+}
+
+type UpdateTransactionResponse {
+  updateTransaction: TransactionMutationResponse
+}
+
+type SetBudgetAmountResponse {
+  updateOrCreateBudgetItem: BudgetItemMutationResponse
+}
+
+type UploadAccountBalanceHistoryResponse {
+  uploadAccountBalanceHistory: UploadAccountBalanceHistoryResponse
+}
+
+type UpdateTransactionSplitsResponse {
+  updateTransactionSplit: TransactionMutationResponse
+}
+
+type Account {
+  id: String
+  displayName: String
+  syncDisabled: Boolean
+  deactivatedAt: String
+  isHidden: Boolean
+  isAsset: Boolean
+  mask: String
+  createdAt: String
+  updatedAt: String
+  displayLastUpdatedAt: String
+  currentBalance: Float
+  displayBalance: Float
+  includeInNetWorth: Boolean
+  hideFromList: Boolean
+  hideTransactionsFromReports: Boolean
+  includeBalanceInNetWorth: Boolean
+  includeInGoalBalance: Boolean
+  dataProvider: String
+  dataProviderAccountId: String
+  isManual: Boolean
+  transactionsCount: Int
+  holdingsCount: Int
+  manualInvestmentsTrackingMethod: String
+  order: Int
+  logoUrl: String
+  type: AccountType
+  subtype: AccountSubtype
+  credential: Credential
+  institution: Institution
+}
+
+type AccountType {
+  name: String
+  display: String
+  group: String
+}
+
+type AccountSubtype {
+  name: String
+  display: String
+}
+
+type Credential {
+  id: String
+  updateRequired: Boolean
+  disconnectedFromDataProviderAt: String
+  dataProvider: String
+  institution: Institution
+}
+
+type Institution {
+  id: String
+  plaidInstitutionId: String
+  name: String
+  status: String
+  primaryColor: String
+  url: String
+}
+
+type Transactions {
+  totalCount: Int
+  results: [Transaction]
+}
+
+type Transaction {
+  id: String
+  amount: Float
+  pending: Boolean
+  date: String
+  hideFromReports: Boolean
+  plaidName: String
+  notes: String
+  isRecurring: Boolean
+  reviewStatus: String
+  needsReview: Boolean
+  dataProviderDescription: String
+  attachments: [Attachment]
+  isSplitTransaction: Boolean
+  category: Category
+  merchant: Merchant
+  account: Account
+  tags: [TransactionTag]
+  splitTransactions: [Transaction]
+  originalTransaction: Transaction
+}
+
+type Attachment {
+  id: String
+  extension: String
+  filename: String
+  originalAssetUrl: String
+  publicId: String
+  sizeBytes: Int
+}
+
+type Category {
+  id: String
+  order: Int
+  name: String
+  systemCategory: Boolean
+  isSystemCategory: Boolean
+  isDisabled: Boolean
+  updatedAt: String
+  createdAt: String
+  group: CategoryGroup
+}
+
+type CategoryGroup {
+  id: String
+  name: String
+  order: Int
+  type: String
+  updatedAt: String
+  createdAt: String
+}
+
+type Merchant {
+  id: String
+  name: String
+  transactionsCount: Int
+  logoUrl: String
+  recurringTransactionStream: RecurringTransactionStream
+}
+
+type TransactionTag {
+  id: String
+  name: String
+  color: String
+  order: Int
+  transactionCount: Int
+}
+
+type RecurringTransactionStream {
+  id: String
+}
+
+type Snapshot {
+  date: String
+  signedBalance: Float
+}
+
+type HouseholdPreferences {
+  id: String
+  accountGroupOrder: [String]
+}
+
+type AccountTypeOption {
+  type: AccountType
+  subtype: AccountSubtype
+}
+
+type SnapshotByAccountType {
+  accountType: String
+  month: String
+  balance: Float
+}
+
+type AggregateSnapshot {
+  date: String
+  balance: Float
+}
+
+type Portfolio {
+  aggregateHoldings: [AggregateHolding]
+}
+
+type AggregateHolding {
+  id: String
+  quantity: Float
+  basis: Float
+  totalValue: Float
+  securityPriceChangeDollars: Float
+  securityPriceChangePercent: Float
+  lastSyncedAt: String
+  holdings: [Holding]
+  security: Security
+}
+
+type Holding {
+  id: String
+  type: String
+  typeDisplay: String
+  name: String
+  ticker: String
+  closingPrice: Float
+  isManual: Boolean
+  closingPriceUpdatedAt: String
+}
+
+type Security {
+  id: String
+  name: String
+  type: String
+  ticker: String
+  typeDisplay: String
+  currentPrice: Float
+  currentPriceUpdatedAt: String
+  closingPrice: Float
+  closingPriceUpdatedAt: String
+  oneDayChangePercent: Float
+  oneDayChangeDollars: Float
+}
+
+type BudgetData {
+  monthlyAmountsByCategory: [MonthlyAmountByCategory]
+  monthlyAmountsByCategoryGroup: [MonthlyAmountByCategoryGroup]
+  monthlyAmountsForFlexExpense: MonthlyAmountsForFlexExpense
+  totalsByMonth: [TotalByMonth]
+}
+
+type MonthlyAmountByCategory {
+  category: Category
+  monthlyAmounts: [MonthlyAmount]
+}
+
+type MonthlyAmountByCategoryGroup {
+  categoryGroup: CategoryGroup
+  monthlyAmounts: [MonthlyAmount]
+}
+
+type MonthlyAmountsForFlexExpense {
+  budgetVariability: String
+  monthlyAmounts: [MonthlyAmount]
+}
+
+type TotalByMonth {
+  month: String
+  totalIncome: AmountSummary
+  totalExpenses: AmountSummary
+  totalFixedExpenses: AmountSummary
+  totalNonMonthlyExpenses: AmountSummary
+  totalFlexibleExpenses: AmountSummary
+}
+
+type AmountSummary {
+  plannedAmount: Float
+  actualAmount: Float
+  remainingAmount: Float
+  previousMonthRolloverAmount: Float
+}
+
+type MonthlyAmount {
+  month: String
+  plannedCashFlowAmount: Float
+  plannedSetAsideAmount: Float
+  actualAmount: Float
+  remainingAmount: Float
+  previousMonthRolloverAmount: Float
+  rolloverType: String
+}
+
+type Goal {
+  id: String
+  name: String
+  completedAt: String
+  targetDate: String
+}
+
+type GoalMonthlyContribution {
+  mount: Float
+  startDate: String
+  goalId: String
+}
+
+type GoalPlannedContribution {
+  id: String
+  amount: Float
+  startDate: String
+  goal: Goal
+}
+
+type GoalV2 {
+  id: String
+  name: String
+  archivedAt: String
+  completedAt: String
+  priority: String
+  imageStorageProvider: String
+  imageStorageProviderId: String
+  plannedContributions: [GoalPlannedContribution]
+  monthlyContributionSummaries: [GoalMonthlyContributionSummary]
+}
+
+type GoalMonthlyContributionSummary {
+  month: String
+  sum: Float
+}
+
+type Subscription {
+  id: String
+  paymentSource: String
+  referralCode: String
+  isOnFreeTrial: Boolean
+  hasPremiumEntitlement: Boolean
+}
+
+type Aggregates {
+  summary: Summary
+}
+
+type Summary {
+  sumIncome: Float
+  sumExpense: Float
+  savings: Float
+  savingsRate: Float
+}
+
+type TransactionRule {
+  id: String
+}
+
+type MyHousehold {
+  users: [User]
+}
+
+type User {
+  id: String
+  name: String
+}
+
+type RecurringTransactionItem {
+  stream: RecurringTransactionStream
+  date: String
+  isPast: Boolean
+  transactionId: String
+  amount: Float
+  amountDiff: Float
+  category: Category
+  account: Account
+}
+
+type AccountMutationResponse {
+  account: Account
+  errors: [PayloadError]
+}
+
+type ForceRefreshAccountsResponse {
+  success: Boolean
+  errors: [PayloadError]
+}
+
+type TransactionMutationResponse {
+  transaction: Transaction
+  errors: [PayloadError]
+  deleted: Boolean
+}
+
+type BudgetItemMutationResponse {
+  budgetItem: BudgetItem
+  errors: [PayloadError]
+}
+
+type UploadAccountBalanceHistoryResponse {
+  success: Boolean
+}
+
+type BudgetItem {
+  id: String
+  budgetAmount: Float
+}
+
+type PayloadError {
+  fieldErrors: [FieldError]
+  message: String
+  code: String
+}
+
+type FieldError {
+  field: String
+  messages: [String]
+}
+
+input SplitDataInput {
+  merchantName: String
+  amount: Float
+  categoryId: String
+}

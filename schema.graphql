@@ -1,0 +1,317 @@
+scalar Date # "2019-01-01"
+scalar Timestamp # "2024-12-01T23:50:40.191626+00:00"
+
+################################################################################################################################################
+# MARK: Queries + Mutations
+
+type Query {
+  allTransactions(filters: TransactionFilterInput): TransactionList
+  transactionRules: [TransactionRuleV2]
+}
+
+type Mutation {
+  createTransaction(
+    input: CreateTransactionMutationInput!
+  ): CreateTransactionMutationResponse!
+}
+
+################################################################################################################################################
+# MARK: Inputs
+
+input TransactionFilterInput {
+  search: String
+  categories: [ID]
+  accounts: [ID]
+  merchants: [ID]
+  absAmountGte: Float
+  absAmountLte: Float
+  tags: [ID]
+  startDate: Date
+  endDate: Date
+  hasAttachments: Boolean
+  hasNotes: Boolean
+  hideFromReports: Boolean
+  isRecurring: Boolean
+  isSplit: Boolean
+  needsReview: Boolean
+  needsReviewByUser: ID          # Mutually exclusive with needsReviewUnassigned
+  needsReviewUnassigned: Boolean # Mutually exclusive with needsReviewByUser
+  syncedFromInstitution: Boolean
+  isInvestmentAccount: Boolean
+  debitsOnly: Boolean  # Mutually exclusive with creditsOnly
+  creditsOnly: Boolean # Mutually exclusive with debitsOnly
+  isPending: Boolean
+}
+
+input CreateTransactionMutationInput {
+  date: String!
+  accountId: ID!
+  amount: Float!
+  merchantName: String!
+  categoryId: ID!
+  notes: String
+  shouldUpdateBalance: Boolean!
+}
+
+################################################################################################################################################
+# MARK: Responses
+
+type CreateTransactionMutationResponse {
+  errors: PayloadError
+  transaction: Transaction
+}
+
+type TransactionList {
+  totalCount: Int!
+  totalSelectableCount: Int!
+  results(offset: Int, limit: Int, orderBy: TransactionOrdering): [Transaction!]!
+}
+
+enum TransactionOrdering {
+  date
+  inverse_date
+  amount
+  inverse_amount
+}
+
+################################################################################################################################################
+# MARK: Types
+
+type Transaction {
+  id: ID!
+  amount: Float!
+  pending: Boolean!
+  date: String!
+  hideFromReports: Boolean!
+  plaidName: String!
+  notes: String
+  isRecurring: Boolean!
+  reviewStatus: String!
+  needsReview: Boolean!
+  attachments: [Attachment]
+  isSplitTransaction: Boolean!
+  dataProviderDescription: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  category: Category!
+  merchant: Merchant!
+  account: Account!
+  tags: [Tag]
+}
+
+type Attachment {
+  id: ID!
+  extension: String!
+  filename: String!
+  originalAssetUrl: String!
+  publicId: String!
+  sizeBytes: Int!
+}
+
+type Category {
+  id: ID!
+  name: String!
+  order: Int!
+  icon: String! # Emoji
+  isSystemCategory: Boolean!
+  systemCategory: String
+  isDisabled: Boolean!
+  group: CategoryGroup!
+}
+
+type CategoryGroup {
+  id: ID!
+  name: String!
+  type: CategoryGroupType!
+  order: Int!
+}
+
+enum CategoryGroupType {
+  income
+  expense
+  transfer
+}
+
+type Merchant {
+  name: String!
+  id: ID!
+  transactionsCount: Int!
+  logoUrl: String
+  recurringTransactionStream: RecurringTransactionStream
+}
+
+type RecurringTransactionStream {
+  frequency: String!
+  isActive: Boolean!
+}
+
+type Account {
+  id: ID!
+  displayName: String!
+  icon: String!
+  logoUrl: String
+  type: AccountType!
+  subtype: AccountSubtype!
+  
+  displayBalance: Float!
+  signedBalance: Float!
+  updatedAt: Timestamp!
+  displayLastUpdatedAt: Timestamp!
+  
+  syncDisabled: Boolean!
+  isHidden: Boolean!
+  isAsset: Boolean!
+  includeInNetWorth: Boolean!
+  includeBalanceInNetWorth: Boolean!
+  order: Int!
+  mask: String # CC/Acct mask, eg "XXXX-XXXX-XXXX-1234", "1234", "*****1234"
+  credential: Credential
+  institution: Institution
+}
+
+type AccountType {
+  name: String!
+  display: String!
+  group: String!
+}
+
+type AccountSubtype {
+  display: String!
+}
+
+type Credential {
+  id: ID!
+  updateRequired: Boolean!
+  dataProvider: String!
+  disconnectedFromDataProviderAt: Timestamp
+}
+
+type Institution {
+  id: ID!
+  url: String!
+  logo: String!
+  name: String!
+  status: String
+  balanceStatus: String
+  transactionsStatus: String
+
+  # plaidStatus: ObjectScalar
+  newConnectionsDisabled: Boolean!
+  hasIssuesReported: Boolean!
+  hasIssuesReportedMessage: String
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  color: String!
+  order: Int!
+}
+
+type TransactionRuleV2 {
+  id: ID
+  order: Int
+  merchantCriteriaUseOriginalStatement: Boolean
+  merchantCriteria: MerchantCriteria
+  amountCriteria: AmountCriteria
+  categoryIds: [ID]
+  accountIds: [ID]
+  categories: [Category]
+  accounts: [Account]
+  setMerchantAction: Action
+  setCategoryAction: CategoryAction
+  addTagsAction: [TagAction]
+  linkGoalAction: GoalAction
+  needsReviewByUserAction: Action
+  unassignNeedsReviewByUserAction: Boolean
+  sendNotificationAction: Boolean
+  setHideFromReportsAction: Boolean
+  reviewStatusAction: Action
+  recentApplicationCount: Int
+  lastAppliedAt: String
+  splitTransactionsAction: SplitTransactionsAction
+}
+
+type MerchantCriteria {
+  operator: String
+  value: String
+}
+
+type AmountCriteria {
+  operator: String
+  isExpense: Boolean
+  value: Float
+  valueRange: ValueRange
+}
+
+type ValueRange {
+  lower: Float
+  upper: Float
+}
+
+type Category {
+  id: ID
+  name: String
+  icon: String
+}
+
+type Account {
+  id: ID
+  displayName: String
+  icon: String
+  logoUrl: String
+}
+
+type Action {
+  id: ID
+  name: String
+}
+
+type CategoryAction {
+  id: ID
+  name: String
+  icon: String
+}
+
+type TagAction {
+  id: ID
+  name: String
+  color: String
+}
+
+type GoalAction {
+  id: ID
+  name: String
+  imageStorageProvider: String
+  imageStorageProviderId: String
+}
+
+type SplitTransactionsAction {
+  amountType: String
+  splitsInfo: [SplitInfo]
+}
+
+type SplitInfo {
+  categoryId: ID
+  merchantName: String
+  amount: Float
+  goalId: ID
+  tags: [ID]
+  hideFromReports: Boolean
+  reviewStatus: String
+  needsReviewByUserId: ID
+}
+
+################################################################################################################################################
+# MARK: Utility Types
+
+type PayloadError {
+  fieldErrors: [FieldError]
+  message: String
+  code: String
+}
+
+type FieldError {
+  field: String
+  messages: [String]
+}
