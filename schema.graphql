@@ -13,6 +13,14 @@ type Mutation {
   createTransaction(
     input: CreateTransactionMutationInput!
   ): CreateTransactionMutationResponse!
+  
+  updateTransaction(
+    input: UpdateTransactionMutationInput!
+  ): UpdateTransactionMutationResponse!
+  
+  deleteTransaction(
+    input: DeleteTransactionMutationInput!
+  ): DeleteTransactionMutationResponse!
 }
 
 ################################################################################################################################################
@@ -44,7 +52,7 @@ input TransactionFilterInput {
 }
 
 input CreateTransactionMutationInput {
-  date: String!
+  date: Date!
   accountId: ID!
   amount: Float!
   merchantName: String!
@@ -53,12 +61,38 @@ input CreateTransactionMutationInput {
   shouldUpdateBalance: Boolean!
 }
 
+input UpdateTransactionMutationInput {
+  id: ID!
+  category: ID
+  name: String # Merchant name
+  amount: Float
+  date: Date
+  hideFromReports: Boolean
+  needsReview: Boolean
+  goalId: ID
+  notes: String
+}
+
+input DeleteTransactionMutationInput {
+  transactionId: ID!
+}
+
 ################################################################################################################################################
 # MARK: Responses
 
 type CreateTransactionMutationResponse {
   errors: PayloadError
   transaction: Transaction
+}
+
+type UpdateTransactionMutationResponse {
+  errors: PayloadError
+  transaction: Transaction
+}
+
+type DeleteTransactionMutationResponse {
+  errors: PayloadError
+  deleted: Boolean
 }
 
 type TransactionList {
