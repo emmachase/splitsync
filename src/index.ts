@@ -417,8 +417,8 @@ async function syncNewTransactions() {
     if (notifications === undefined) {
         throw new Error("Failed to fetch notifications", { cause: notificationsResponse.error });
     }
-
-    for (const notification of notifications) {
+    
+    for (const notification of notifications.toReversed()) {
         const notificationId = assertNotNull(notification.id, "notification.id");
         const notificationRecord = db
             .select().from(notificationsTable)
@@ -467,7 +467,7 @@ async function syncNewTransactions() {
             }
             case NotificationType.ExpenseDeleted:
                 console.log("Expense deleted", notification)
-                
+
                 const source = assertNotNull(notification.source, "notification.source");
                 assertEquals("Expense", source.type);
                 const expenseId = assertNotNull(source.id, "source.id");
