@@ -13,6 +13,6 @@ export const notificationsTable = sqliteTable("notifications", {
 }, () => [])
 
 export const notificationsLastProcessedTable = sqliteTable("notifications_last_processed", {
-    // id: int().primaryKey(),
+    id: int().primaryKey(),
     lastProcessedAt: int(), // timestamp in epoch milliseconds
 }, () => [])

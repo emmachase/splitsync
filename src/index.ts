@@ -391,11 +391,22 @@ async function batchedCreateTransactions(expenses: CreateTransactionInput[]): Pr
 }
 
 async function syncNewTransactions() {
+    const now = Date.now();
     const lastProcessedAt = assertNotNull(db.select().from(notificationsLastProcessedTable).get()?.lastProcessedAt, "lastProcessedAt");
     db.delete(notificationsLastProcessedTable).run();
-    db.insert(notificationsLastProcessedTable).values({ lastProcessedAt: Date.now() }).run();
+    db.insert(notificationsLastProcessedTable)
+        .values({ id: 1, lastProcessedAt: now })
+        .onConflictDoUpdate({
+            target: notificationsLastProcessedTable.id,
+            set: { lastProcessedAt: now }
+        })
+        .run();
+    // db.update(notificationsLastProcessedTable)
+    //     .set({ lastProcessedAt: Date.now() })
+    //     .where(eq(notificationsLastProcessedTable.id, 1))
+    //     .run();
     
-    console.log(lastProcessedAt);
+    console.log("Last processed at", new Date(lastProcessedAt).toISOString());
     const notificationsResponse = await getNotifications({ query: { 
         // limit: 10,
         // updated_after: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
@@ -442,6 +453,7 @@ async function syncNewTransactions() {
             }
             case NotificationType.ExpenseUpdated: {
                 console.log("Expense updated", notification)
+
                 const source = assertNotNull(notification.source, "notification.source");
                 assertEquals("Expense", source.type);
                 const expenseId = assertNotNull(source.id, "source.id");
@@ -455,6 +467,7 @@ async function syncNewTransactions() {
             }
             case NotificationType.ExpenseDeleted:
                 console.log("Expense deleted", notification)
+                
                 const source = assertNotNull(notification.source, "notification.source");
                 assertEquals("Expense", source.type);
                 const expenseId = assertNotNull(source.id, "source.id");
@@ -644,10 +657,10 @@ async function deleteTransaction(expense: Expense) {
     db.delete(expensesTable).where(eq(expensesTable.splitwiseId, expense.id!)).run();
 }
 
-// syncNewTransactions()
+syncNewTransactions()
 // syncAllTransactions()
 
 // db.insert(notificationsLastProcessedTable).values({ lastProcessedAt: Date.now() }).run();
 
-db.delete(notificationsLastProcessedTable).run();
-    // db.insert(notificationsLastProcessedTable).values({ lastProcessedAt: Date.now() }).run();
+// db.delete(notificationsLastProcessedTable).run();
+// db.insert(notificationsLastProcessedTable).values({ id: 1, lastProcessedAt: Date.now() }).run();
