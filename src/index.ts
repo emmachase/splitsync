@@ -644,7 +644,11 @@ async function updateTransaction(expense: Expense) {
 }
 
 async function deleteTransaction(expense: Expense) {
-    const monarchId = assertNotNull(db.select().from(expensesTable).where(eq(expensesTable.splitwiseId, expense.id!)).get()?.monarchId, "monarchId");
+    const monarchId = db.select().from(expensesTable).where(eq(expensesTable.splitwiseId, expense.id!)).get()?.monarchId;
+    if (!monarchId) {
+        console.warn("Monarch ID not found for expense; assuming was processed at same time; skipping...", expense.id, expense.description);
+        return;
+    }
 
     const result = await gqlClient.mutation(DeleteTransactionMutation, {
         input: {
