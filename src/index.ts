@@ -391,16 +391,8 @@ async function batchedCreateTransactions(expenses: CreateTransactionInput[]): Pr
 }
 
 async function syncNewTransactions() {
-    const now = Date.now();
     const lastProcessedAt = assertNotNull(db.select().from(notificationsLastProcessedTable).get()?.lastProcessedAt, "lastProcessedAt");
-    db.delete(notificationsLastProcessedTable).run();
-    db.insert(notificationsLastProcessedTable)
-        .values({ id: 1, lastProcessedAt: now })
-        .onConflictDoUpdate({
-            target: notificationsLastProcessedTable.id,
-            set: { lastProcessedAt: now }
-        })
-        .run();
+
     // db.update(notificationsLastProcessedTable)
     //     .set({ lastProcessedAt: Date.now() })
     //     .where(eq(notificationsLastProcessedTable.id, 1))
@@ -408,7 +400,7 @@ async function syncNewTransactions() {
     
     console.log("Last processed at", new Date(lastProcessedAt).toISOString());
     const notificationsResponse = await getNotifications({ query: { 
-        // limit: 10,
+        limit: 1000000,
         // updated_after: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
         updated_after: new Date(lastProcessedAt).toISOString()
     }})
@@ -417,7 +409,7 @@ async function syncNewTransactions() {
     if (notifications === undefined) {
         throw new Error("Failed to fetch notifications", { cause: notificationsResponse.error });
     }
-    
+
     for (const notification of notifications.toReversed()) {
         const notificationId = assertNotNull(notification.id, "notification.id");
         const notificationRecord = db
@@ -428,6 +420,9 @@ async function syncNewTransactions() {
             console.log("Notification already processed", notification)
             continue;
         }
+
+        // console.log("Dry-run would have processed notification", notification)
+        // if (true) continue;
 
         switch (notification.type) {
             case NotificationType.ExpenseAdded:
@@ -489,6 +484,16 @@ async function syncNewTransactions() {
             processedAt: Date.now(),
         }).run();
     }
+
+    const now = Date.now();
+    db.delete(notificationsLastProcessedTable).run();
+    db.insert(notificationsLastProcessedTable)
+        .values({ id: 1, lastProcessedAt: now })
+        .onConflictDoUpdate({
+            target: notificationsLastProcessedTable.id,
+            set: { lastProcessedAt: now }
+        })
+        .run();
 }
 
 async function syncAllTransactions() {
