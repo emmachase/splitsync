@@ -13,6 +13,10 @@ const ZERO = new BigDecimal(0);
 
 const fetchRetry = patchFetch(fetch);
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+const useLastDay = args.includes('--last-day') || args.includes('-d');
+
 client.setConfig({
     baseUrl: "https://secure.splitwise.com/api/v3.0",
     headers: {
@@ -399,10 +403,17 @@ async function syncNewTransactions() {
     //     .run();
     
     console.log("Last processed at", new Date(lastProcessedAt).toISOString());
+    
+    // Use the last day if specified in command line arguments, otherwise use the last processed timestamp
+    const updatedAfter = useLastDay 
+        ? new Date(lastProcessedAt - 24 * 60 * 60 * 1000).toISOString()
+        : new Date(lastProcessedAt).toISOString();
+    
+    console.log("Querying notifications updated after", updatedAfter);
+    
     const notificationsResponse = await getNotifications({ query: { 
         limit: 1000000,
-        // updated_after: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        updated_after: new Date(lastProcessedAt).toISOString()
+        updated_after: updatedAfter
     }})
 
     const notifications = notificationsResponse.data?.notifications;
@@ -410,6 +421,13 @@ async function syncNewTransactions() {
         throw new Error("Failed to fetch notifications", { cause: notificationsResponse.error });
     }
 
+    // If there are no notifications, we don't need to update the last processed timestamp
+    if (notifications.length === 0) {
+        console.log("No new notifications to process");
+        return;
+    }
+
+    // Process notifications in reverse order (oldest first)
     for (const notification of notifications.toReversed()) {
         const notificationId = assertNotNull(notification.id, "notification.id");
         const notificationRecord = db
@@ -485,13 +503,23 @@ async function syncNewTransactions() {
         }).run();
     }
 
-    const now = Date.now();
+    // Get the created_at timestamp of the most recent notification
+    // Since we processed in reverse order, the first notification is the most recent
+    const lastNotification = notifications[0];
+    const lastNotificationCreatedAt = assertNotNull(lastNotification.created_at, "lastNotification.created_at");
+    
+    // Convert the ISO string to a timestamp
+    const lastNotificationTimestamp = new Date(lastNotificationCreatedAt).getTime();
+    
+    console.log("Setting last processed timestamp to", new Date(lastNotificationTimestamp).toISOString());
+    
+    // Update the last processed timestamp
     db.delete(notificationsLastProcessedTable).run();
     db.insert(notificationsLastProcessedTable)
-        .values({ id: 1, lastProcessedAt: now })
+        .values({ id: 1, lastProcessedAt: lastNotificationTimestamp })
         .onConflictDoUpdate({
             target: notificationsLastProcessedTable.id,
-            set: { lastProcessedAt: now }
+            set: { lastProcessedAt: lastNotificationTimestamp }
         })
         .run();
 }
@@ -666,7 +694,23 @@ async function deleteTransaction(expense: Expense) {
     db.delete(expensesTable).where(eq(expensesTable.splitwiseId, expense.id!)).run();
 }
 
-syncNewTransactions()
+// Print help if --help or -h is specified
+if (args.includes('--help') || args.includes('-h')) {
+    console.log(`
+SplitSync - Sync Splitwise expenses to Monarch Money
+
+Usage:
+  bun run src/index.ts [options]
+
+Options:
+  --last-day, -d    Query for notifications from the last 24 hours instead of since last sync
+  --help, -h        Show this help message
+`);
+    process.exit(0);
+}
+
+// Run the sync process
+syncNewTransactions();
 // syncAllTransactions()
 
 // db.insert(notificationsLastProcessedTable).values({ lastProcessedAt: Date.now() }).run();
